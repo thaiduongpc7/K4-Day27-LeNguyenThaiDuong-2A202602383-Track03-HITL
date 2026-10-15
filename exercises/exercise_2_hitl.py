@@ -29,6 +29,17 @@ from common.schemas import (
 
 console = Console()
 
+CALIBRATION = (
+    'Calibrate confidence conservatively; it is NOT how good the PR looks but how sure you are '
+    'that your review is complete and correct given only this diff. Use roughly: 0.85-0.95 only'
+    ' for tiny, self-contained, low-risk changes with no open questions; 0.60-0.72 when the dif'
+    'f is reasonable but you have unresolved questions about design, data/schema migration, bac'
+    'kward compatibility, or missing tests; 0.20-0.55 when there are serious security flaws (we'
+    'ak password hashing, plaintext secrets, SQL injection, hard-coded identities) or large une'
+    'xplained changes. Never report above 0.80 if you have any open question or the change touc'
+    'hes a schema, authentication, or persistence.'
+)
+
 
 def node_fetch_pr(state: ReviewState) -> dict:
     console.print("[cyan]→ fetch_pr[/cyan]")
@@ -43,7 +54,7 @@ def node_analyze(state: ReviewState) -> dict:
     llm = get_llm().with_structured_output(PRAnalysis)
     with console.status("[dim]LLM reviewing the diff...[/dim]"):
         analysis = llm.invoke([
-            {"role": "system", "content": "Senior reviewer. Structured output."},
+            {"role": "system", "content": "Senior reviewer. Structured output. " + CALIBRATION},
             {"role": "user", "content": f"Title: {state['pr_title']}\nDiff:\n{state['pr_diff']}"},
         ])
     console.print(f"  [green]✓[/green] confidence={analysis.confidence:.0%}, {len(analysis.comments)} comment(s)")

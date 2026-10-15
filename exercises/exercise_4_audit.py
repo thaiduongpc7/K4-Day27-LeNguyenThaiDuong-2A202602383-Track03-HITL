@@ -52,6 +52,17 @@ from common.schemas import (
 
 
 console = Console()
+
+CALIBRATION = (
+    'Calibrate confidence conservatively; it is NOT how good the PR looks but how sure you are '
+    'that your review is complete and correct given only this diff. Use roughly: 0.85-0.95 only'
+    ' for tiny, self-contained, low-risk changes with no open questions; 0.60-0.72 when the dif'
+    'f is reasonable but you have unresolved questions about design, data/schema migration, bac'
+    'kward compatibility, or missing tests; 0.20-0.55 when there are serious security flaws (we'
+    'ak password hashing, plaintext secrets, SQL injection, hard-coded identities) or large une'
+    'xplained changes. Never report above 0.80 if you have any open question or the change touc'
+    'hes a schema, authentication, or persistence.'
+)
 AGENT_ID = "pr-review-agent@v0.1"
 
 
@@ -102,7 +113,7 @@ async def node_analyze(state):
     with console.status("[dim]LLM reviewing the diff...[/dim]"):
         a: PRAnalysis = await llm.ainvoke([
             {"role": "system", "content": (
-                "Senior reviewer. Structured output. "
+                "Senior reviewer. Structured output. " + CALIBRATION + " "
                 f"Report an honest confidence (0-1). If your confidence is below {ESCALATE_THRESHOLD:.0%}, "
                 "you MUST populate escalation_questions with 2-4 specific, context-rich questions, "
                 "each naming the exact file, function or diff section it refers to and asking for "
