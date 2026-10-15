@@ -45,27 +45,6 @@ st.set_page_config(page_title="HITL PR Review", layout="wide")
 st.title("HITL PR Review Agent")
 
 
-# ─── Sidebar — recent sessions ─────────────────────────────────────────────
-with st.sidebar:
-    st.header("Recent sessions")
-    try:
-        recent = asyncio.run(list_recent_threads())
-    except Exception as e:  # DB not created yet, etc.
-        recent = []
-        st.caption(f"(no sessions: {e})")
-    if not recent:
-        st.caption("No sessions yet.")
-    for r in recent:
-        icon = {"low": "🟢", "med": "🟡", "high": "🔴"}.get(r["worst_risk"], "⚪")
-        label = f"{icon} {r['pr_url'].split('github.com/')[-1]}"
-        if st.button(label, key=f"thread_{r['thread_id']}", help=(
-            f"thread_id: {r['thread_id']}\nworst_risk: {r['worst_risk']}\nlast_event: {r['last_event']}"
-        ), use_container_width=True):
-            select_thread(r["thread_id"], r["pr_url"])
-            st.rerun()
-        st.caption(f"{r['thread_id'][:8]} · {r['worst_risk']} · {r['last_event'][:19]}")
-
-
 # ─── Helpers for sessions ──────────────────────────────────────────────────
 async def list_recent_threads() -> list[dict]:
     """Same query as audit.replay.list_threads, but returns rows instead of printing."""
@@ -105,6 +84,27 @@ def select_thread(thread_id: str, pr_url: str) -> None:
         values, payload = {}, None
     st.session_state.interrupt_payload = payload
     st.session_state.final = values if payload is None and values.get("final_action") else None
+
+
+# ─── Sidebar — recent sessions ─────────────────────────────────────────────
+with st.sidebar:
+    st.header("Recent sessions")
+    try:
+        recent = asyncio.run(list_recent_threads())
+    except Exception as e:  # DB not created yet, etc.
+        recent = []
+        st.caption(f"(no sessions: {e})")
+    if not recent:
+        st.caption("No sessions yet.")
+    for r in recent:
+        icon = {"low": "🟢", "med": "🟡", "high": "🔴"}.get(r["worst_risk"], "⚪")
+        label = f"{icon} {r['pr_url'].split('github.com/')[-1]}"
+        if st.button(label, key=f"thread_{r['thread_id']}", help=(
+            f"thread_id: {r['thread_id']}\nworst_risk: {r['worst_risk']}\nlast_event: {r['last_event']}"
+        ), use_container_width=True):
+            select_thread(r["thread_id"], r["pr_url"])
+            st.rerun()
+        st.caption(f"{r['thread_id'][:8]} · {r['worst_risk']} · {r['last_event'][:19]}")
 
 
 # ─── Top form — start a new review ─────────────────────────────────────────
